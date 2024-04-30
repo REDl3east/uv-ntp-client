@@ -40,6 +40,9 @@ typedef void (*ntp_poll_cb)(uv_ntp_t* ntp, ntp_packet_t* packet, int status);
 
 typedef struct uv_ntp_t {
   int connected;
+  int interval;
+
+  // private
   struct sockaddr_in addr;
   uv_getaddrinfo_t dns_addr;
   uv_udp_t udp;
@@ -47,11 +50,45 @@ typedef struct uv_ntp_t {
   ntp_packet_t udp_packet;
   uv_buf_t udp_buf;
   uv_timer_t timer;
-
   ntp_poll_cb poll_cb;
-  int interval;
   uv_loop_t* loop;
+
+  uint32_t origin_second;
+  uint32_t origin_fraction;
+  uint32_t destination_second;
+  uint32_t destination_fraction;
 } uv_ntp_t;
+
+struct timeval uv_ntp_to_timeval(uint32_t second, uint32_t fraction) {
+  struct timeval tv;
+  tv.tv_sec  = second - 2208988800LU;
+  tv.tv_usec = (uint32_t)((double)fraction * 1.0e6 / (double)(1LL << 32));
+  return tv;
+}
+
+void uv_timeval_to_ntp(struct timeval* tv, uint32_t* second, uint32_t* fraction) {
+  *second   = tv->tv_sec + 2208988800;
+  *fraction = (uint32_t)((double)(tv->tv_usec + 1) * (double)(1LL << 32) * 1.0e-6);
+}
+
+int uv_ntp_ref_id_to_str(uint32_t ref_id, char* str, size_t str_len) {
+  if (str_len < 5) return -1;
+  memcpy(str, &ref_id, 4);
+  str[4] = '\0';
+  return 1;
+}
+
+size_t uv_ntp_time_to_str(uint32_t second, uint32_t fraction, char* str, size_t str_len) {
+  struct timeval tv = uv_ntp_to_timeval(second, fraction);
+
+  int nwrite1 = strftime(str, str_len, "%Y/%m/%d %X", localtime(&tv.tv_sec));
+  if (nwrite1 <= 0) return -1;
+
+  int nwrite2 = snprintf(str + nwrite1, str_len - nwrite1, ".%06ld", tv.tv_usec);
+  if (nwrite2 <= 0) return -1;
+
+  return nwrite1 + nwrite2;
+}
 
 static void ntp_alloc_cb(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
   buf->base = (char*)malloc(suggested_size);
@@ -75,12 +112,16 @@ static void ntp_recv_start(uv_udp_t* handle, ssize_t nread, const uv_buf_t* buf,
     // packet->reference_id                 = ntohl(packet->reference_id);
     packet->reference_timestamp_second   = ntohl(packet->reference_timestamp_second);
     packet->reference_timestamp_fraction = ntohl(packet->reference_timestamp_fraction);
-    packet->origin_timestamp_second      = ntohl(packet->origin_timestamp_second);
-    packet->origin_timestamp_fraction    = ntohl(packet->origin_timestamp_fraction);
+    packet->origin_timestamp_second      = ntp->origin_second;
+    packet->origin_timestamp_fraction    = ntp->origin_fraction;
     packet->receive_timestamp_second     = ntohl(packet->receive_timestamp_second);
     packet->receive_timestamp_fraction   = ntohl(packet->receive_timestamp_fraction);
     packet->transmit_timestamp_second    = ntohl(packet->transmit_timestamp_second);
     packet->transmit_timestamp_fraction  = ntohl(packet->transmit_timestamp_fraction);
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    uv_timeval_to_ntp(&tv, &ntp->destination_second, &ntp->destination_fraction);
 
     ntp->poll_cb(ntp, (ntp_packet_t*)buf[0].base, 0);
   }
@@ -94,6 +135,10 @@ static int uv_ntp_poll(uv_ntp_t* ntp) {
   // Mode = Client: 3
   packet.li_vn_mode = 0b0011011;
   uv_buf_t buf      = {(char*)&packet, sizeof(packet)};
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  uv_timeval_to_ntp(&tv, &ntp->origin_second, &ntp->origin_fraction);
 
   int r = uv_udp_send(&ntp->udp_send, &ntp->udp, &buf, 1, NULL, NULL);
   if (r < 0) {
@@ -166,6 +211,11 @@ int uv_ntp_init(uv_loop_t* loop, uv_ntp_t* ntp) {
 
   ntp->udp_buf.base = (char*)&ntp->udp_packet;
   ntp->udp_buf.len  = sizeof(ntp->udp_packet);
+
+  ntp->origin_second        = 0;
+  ntp->origin_fraction      = 0;
+  ntp->destination_second   = 0;
+  ntp->destination_fraction = 0;
 
   return r;
 }

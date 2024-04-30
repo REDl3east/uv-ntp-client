@@ -32,32 +32,6 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-struct timeval uv_ntp_to_timeval(uint32_t second, uint32_t fraction) {
-  struct timeval tv;
-  tv.tv_sec  = second - 2208988800LU;
-  tv.tv_usec = (uint32_t)((double)fraction * 1.0e6 / (double)(1LL << 32));
-  return tv;
-}
-
-int uv_ntp_ref_id_to_str(uint32_t ref_id, char* str, size_t str_len) {
-  if (str_len < 5) return -1;
-  memcpy(str, &ref_id, 4);
-  str[4] = '\0';
-  return 1;
-}
-
-size_t uv_ntp_time_to_str(uint32_t second, uint32_t fraction, char* str, size_t str_len) {
-  struct timeval tv = uv_ntp_to_timeval(second, fraction);
-
-  int nwrite1 = strftime(str, str_len, "%Y/%m/%d %X", localtime(&tv.tv_sec));
-  if (nwrite1 <= 0) return -1;
-
-  int nwrite2 = snprintf(str + nwrite1, str_len - nwrite1, ".%06ld", tv.tv_usec);
-  if (nwrite2 <= 0) return -1;
-
-  return nwrite1 + nwrite2;
-}
-
 void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   if (status < 0) {
     fprintf(stderr, "ERROR: %s\n", uv_strerror(status));
@@ -69,6 +43,7 @@ void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   char origin_buffer[32];
   char rx_buffer[32];
   char tx_buffer[32];
+  char dst_buffer[32];
 
   if (uv_ntp_ref_id_to_str(packet->reference_id, ref_id_str, 5) < 0) {
     return;
@@ -76,13 +51,16 @@ void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   if (uv_ntp_time_to_str(packet->reference_timestamp_second, packet->reference_timestamp_fraction, ref_buffer, 32) <= 0) {
     return;
   }
-  if (uv_ntp_time_to_str(packet->origin_timestamp_second, packet->origin_timestamp_fraction, origin_buffer, 32) <= 0) {
+  if (uv_ntp_time_to_str(ntp->origin_second, ntp->origin_fraction, origin_buffer, 32) <= 0) {
     return;
   }
   if (uv_ntp_time_to_str(packet->receive_timestamp_second, packet->receive_timestamp_fraction, rx_buffer, 32) <= 0) {
     return;
   }
   if (uv_ntp_time_to_str(packet->transmit_timestamp_second, packet->transmit_timestamp_fraction, tx_buffer, 32) <= 0) {
+    return;
+  }
+  if (uv_ntp_time_to_str(ntp->destination_second, ntp->destination_fraction, dst_buffer, 32) <= 0) {
     return;
   }
 
@@ -95,8 +73,9 @@ void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   printf("root delay:      %d\n", packet->root_delay);
   printf("root dispersion: %d\n", packet->root_dispersion);
   printf("reference ID:    %s\n", ref_id_str);
-  printf("Reference Time:  %s\n", ref_buffer);
-  printf("Origin Time:     %s\n", origin_buffer);
-  printf("RX Time:         %s\n", rx_buffer);
-  printf("TX Time:         %s\n\n", tx_buffer);
+  printf("Reference Time:  (%010u.%010u) %s\n", packet->reference_timestamp_second, packet->reference_timestamp_fraction, ref_buffer);
+  printf("Origin Time:     (%010u.%010u) %s\n", ntp->origin_second, ntp->origin_fraction, origin_buffer);
+  printf("RX Time:         (%010u.%010u) %s\n", packet->receive_timestamp_second, packet->receive_timestamp_fraction, rx_buffer);
+  printf("TX Time:         (%010u.%010u) %s\n", packet->transmit_timestamp_second, packet->transmit_timestamp_fraction, tx_buffer);
+  printf("Dest Time:       (%010u.%010u) %s\n\n", ntp->destination_second, ntp->destination_fraction, dst_buffer);
 }
