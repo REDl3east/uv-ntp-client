@@ -5,7 +5,6 @@
 
 #include "uv-ntp-client.h"
 
-struct timeval ntp_to_timeval(uint32_t second, uint32_t fraction);
 void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status);
 
 int main(int argc, char** argv) {
@@ -16,8 +15,8 @@ int main(int argc, char** argv) {
     return r;
   }
 
-  // poll NTP server "time-c-b.nist.gov" every 5 seconds
-  r = uv_ntp_start(&ntp, "time-c-b.nist.gov", poll_cb, 5 * 1000);
+  // poll NTP server "time-c-b.nist.gov" every 60 seconds
+  r = uv_ntp_start(&ntp, "time-c-b.nist.gov", poll_cb, 60 * 1000);
   if (r < 0) {
     fprintf(stderr, "ERROR: %s\n", uv_strerror(r));
     return r;
