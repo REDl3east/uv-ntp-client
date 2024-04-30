@@ -15,4 +15,5 @@ NOTE: cmake will download libuv v1.48.0 locally and build a static library that 
 
 ### Links
 [NTP Spec](https://datatracker.ietf.org/doc/html/rfc5905)  
+[A Very Short Introduction to NTP Timestamps](https://tickelton.gitlab.io/articles/ntp-timestamps/)
 [libuv](https://github.com/libuv/libuv)
