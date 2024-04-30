@@ -45,22 +45,12 @@ void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   char tx_buffer[32];
   char dst_buffer[32];
 
-  if (uv_ntp_ref_id_to_str(packet->reference_id, ref_id_str, 5) < 0) {
-    return;
-  }
-  if (uv_ntp_time_to_str(packet->reference_timestamp_second, packet->reference_timestamp_fraction, ref_buffer, 32) <= 0) {
-    return;
-  }
-  if (uv_ntp_time_to_str(ntp->origin_second, ntp->origin_fraction, origin_buffer, 32) <= 0) {
-    return;
-  }
-  if (uv_ntp_time_to_str(packet->receive_timestamp_second, packet->receive_timestamp_fraction, rx_buffer, 32) <= 0) {
-    return;
-  }
-  if (uv_ntp_time_to_str(packet->transmit_timestamp_second, packet->transmit_timestamp_fraction, tx_buffer, 32) <= 0) {
-    return;
-  }
-  if (uv_ntp_time_to_str(ntp->destination_second, ntp->destination_fraction, dst_buffer, 32) <= 0) {
+  if (uv_ntp_ref_id_to_str(packet->reference_id, ref_id_str, 5) <= 0 ||
+      uv_ntp_time_to_str(packet->reference_timestamp_second, packet->reference_timestamp_fraction, ref_buffer, 32) <= 0 ||
+      uv_ntp_time_to_str(ntp->origin_second, ntp->origin_fraction, origin_buffer, 32) <= 0 ||
+      uv_ntp_time_to_str(packet->receive_timestamp_second, packet->receive_timestamp_fraction, rx_buffer, 32) <= 0 ||
+      uv_ntp_time_to_str(packet->transmit_timestamp_second, packet->transmit_timestamp_fraction, tx_buffer, 32) <= 0 ||
+      uv_ntp_time_to_str(ntp->destination_second, ntp->destination_fraction, dst_buffer, 32) <= 0) {
     return;
   }
 
