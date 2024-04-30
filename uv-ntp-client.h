@@ -3,7 +3,6 @@
 
 #include <stdlib.h>
 
-#include "packet.h"
 #include "uv.h"
 
 #define NTP_ADDR_PORT 123
@@ -11,6 +10,30 @@
 #define UV_NTP_LI(li_vn_mode)   (li_vn_mode >> 6)
 #define UV_NTP_VN(li_vn_mode)   ((li_vn_mode >> 3) & 0b00000111)
 #define UV_NTP_MODE(li_vn_mode) ((li_vn_mode)&0b00000111)
+
+typedef struct ntp_packet_t {
+  union {
+    uint32_t packet[12];
+    struct {
+      uint8_t li_vn_mode;
+      uint8_t stratum;
+      uint8_t poll;
+      uint8_t precision;
+      uint32_t root_delay;
+      uint32_t root_dispersion;
+      uint32_t reference_id;
+      uint32_t reference_timestamp_second;
+      uint32_t reference_timestamp_fraction;
+      uint32_t origin_timestamp_second;
+      uint32_t origin_timestamp_fraction;
+      uint32_t receive_timestamp_second;
+      uint32_t receive_timestamp_fraction;
+      uint32_t transmit_timestamp_second;
+      uint32_t transmit_timestamp_fraction;
+    };
+  };
+
+} ntp_packet_t;
 
 typedef struct uv_ntp_t uv_ntp_t;
 typedef void (*ntp_poll_cb)(uv_ntp_t* ntp, ntp_packet_t* packet, int status);
