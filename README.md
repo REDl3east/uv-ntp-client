@@ -9,7 +9,7 @@ cmake ..
 make
 
 # run example
-./build/uv-ntp-client
+./uv-ntp-client
 ```
 
 ### API
