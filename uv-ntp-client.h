@@ -1,7 +1,7 @@
 #ifndef _UV_NTP_CLIENT_H
 #define _UV_NTP_CLIENT_H
 
-#include "uv.h"
+#include <uv.h>
 
 #define NTP_ADDR_PORT 123
 
