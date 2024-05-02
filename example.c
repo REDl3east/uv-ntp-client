@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
 #include "uv-ntp-client.h"
 
 void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status);
