@@ -7,7 +7,18 @@ mkdir build
 cd build
 cmake ..
 make
+
+# run example
+./build/uv-ntp-client
 ```
+
+### API
+```c
+int uv_ntp_init(uv_loop_t* loop, uv_ntp_t* ntp);
+int uv_ntp_start(uv_ntp_t* ntp, const char* name, ntp_poll_cb poll_cb, uint64_t interval);
+int ntp_ip4_stop(uv_ntp_t* ntp);
+```
+An example on how to use this API can be found [here](./example.c).
 
 ### Dependancies
 libuv v1.48.0  
