@@ -6,7 +6,7 @@ set(UV_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs/libuv)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/libs)
 
 set(MAIN_SRC
-  ${CMAKE_CURRENT_SOURCE_DIR}/main.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/example.c
   ${CMAKE_CURRENT_SOURCE_DIR}/uv-ntp-client.c
 )
 
