@@ -68,9 +68,4 @@ void poll_cb(uv_ntp_t* ntp, ntp_packet_t* packet, int status) {
   printf("RX Time:         (%010u.%010u) %s\n", packet->receive_timestamp_second, packet->receive_timestamp_fraction, rx_buffer);
   printf("TX Time:         (%010u.%010u) %s\n", packet->transmit_timestamp_second, packet->transmit_timestamp_fraction, tx_buffer);
   printf("Dest Time:       (%010u.%010u) %s\n\n", ntp->destination_second, ntp->destination_fraction, dst_buffer);
-
-
-  // printf("Origin Time:     %f\n", (float)ntp->origin_second);
-
-
 }
